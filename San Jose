@@ -1,0 +1,44 @@
+set system host-name San_Jose
+set system root-authentication encrypted-password "$6$6xO1.HNG$XXqzJ04PBXbkKVc3mk8/O5d32fDLqx6TjVJK7IyGSWdyGKr23VdGxsc7z/jm16bTHCpsVjTzyM8H7CopUZC810"
+set system login user ops uid 2001
+set system login user ops class super-user
+set system login user ops authentication encrypted-password "$6$NO387E/x$1uZlO1gsaec9ki/BVsyc1TNYPeCfPisyJKWy/prV66tNhfgcND3i8xPvzK07osmvL2cv5XXPf8t3HntAB4A2M."
+set chassis fpc 0 lite-mode
+set interfaces ge-0/0/0 unit 0 family inet filter input mf-classify
+set interfaces ge-0/0/0 unit 0 family inet address 10.222.29.2/24
+set interfaces ge-0/0/1 unit 0 family inet address 10.222.2.1/24
+set interfaces lo0 unit 0 family inet address 192.168.1.2/32
+set class-of-service drop-profiles low-red fill-level 80 drop-probability 10
+set class-of-service drop-profiles high-red fill-level 50 drop-probability 10
+set class-of-service interfaces ge-0/0/1 scheduler-map voip-case
+set class-of-service interfaces ge-0/0/1 unit 0 rewrite-rules dscp voip-dscp-rewrite
+set class-of-service rewrite-rules dscp voip-dscp-rewrite import default
+set class-of-service rewrite-rules dscp voip-dscp-rewrite forwarding-class best-effort loss-priority high code-point 000001
+set class-of-service scheduler-maps voip-case forwarding-class best-effort scheduler be-scheduler
+set class-of-service scheduler-maps voip-case forwarding-class network-control scheduler nc-scheduler
+set class-of-service scheduler-maps voip-case forwarding-class expedited-forwarding scheduler ef-scheduler
+set class-of-service schedulers ef-scheduler transmit-rate 20m
+set class-of-service schedulers ef-scheduler buffer-size temporal 200k
+set class-of-service schedulers ef-scheduler priority high
+set class-of-service schedulers nc-scheduler transmit-rate percent 5
+set class-of-service schedulers nc-scheduler priority low
+set class-of-service schedulers be-scheduler transmit-rate 1m
+set class-of-service schedulers be-scheduler transmit-rate exact
+set firewall family inet filter mf-classify term 1 from protocol tcp
+set firewall family inet filter mf-classify term 1 from protocol udp
+set firewall family inet filter mf-classify term 1 from port 5060
+set firewall family inet filter mf-classify term 1 then forwarding-class expedited-forwarding
+set firewall family inet filter mf-classify term 2 from protocol udp
+set firewall family inet filter mf-classify term 2 from port 16000-16500
+set firewall family inet filter mf-classify term 2 then forwarding-class expedited-forwarding
+set firewall family inet filter mf-classify term 3 from precedence routine
+set firewall family inet filter mf-classify term 3 then policer police-be
+set firewall family inet filter mf-classify term 3 then forwarding-class best-effort
+set firewall family inet filter mf-classify term 4 then accept
+set firewall policer police-be if-exceeding bandwidth-limit 1m
+set firewall policer police-be if-exceeding burst-size-limit 3k
+set firewall policer police-be then loss-priority high
+set routing-options router-id 192.168.1.2
+set protocols ospf area 0.0.0.0 interface lo0.0
+set protocols ospf area 0.0.0.0 interface ge-0/0/0.0
+set protocols ospf area 0.0.0.0 interface ge-0/0/1.0

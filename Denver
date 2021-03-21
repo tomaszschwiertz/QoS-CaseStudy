@@ -1,0 +1,36 @@
+set system host-name Denver
+set system root-authentication encrypted-password "$6$6xO1.HNG$XXqzJ04PBXbkKVc3mk8/O5d32fDLqx6TjVJK7IyGSWdyGKr23VdGxsc7z/jm16bTHCpsVjTzyM8H7CopUZC810"
+set system login user ops uid 2001
+set system login user ops class super-user
+set system login user ops authentication encrypted-password "$6$NO387E/x$1uZlO1gsaec9ki/BVsyc1TNYPeCfPisyJKWy/prV66tNhfgcND3i8xPvzK07osmvL2cv5XXPf8t3HntAB4A2M."
+set chassis fpc 0 lite-mode
+set interfaces ge-0/0/1 unit 0 family inet address 10.222.2.2/24
+set interfaces ge-0/0/2 unit 0 family inet address 10.0.3.1/24
+set interfaces lo0 unit 0 family inet address 192.168.1.3/32
+set class-of-service classifiers dscp voip-dscp-classifier import default
+set class-of-service classifiers dscp voip-dscp-classifier forwarding-class best-effort loss-priority high code-points 000001
+set class-of-service drop-profiles low-red fill-level 80 drop-probability 10
+set class-of-service drop-profiles low-red fill-level 50 drop-probability 10
+set class-of-service drop-profiles high-red fill-level 50 drop-probability 10
+set class-of-service interfaces ge-0/0/1 unit 0 classifiers dscp voip-dscp-classifier
+set class-of-service interfaces ge-0/0/2 scheduler-map voip-case
+set class-of-service interfaces ge-0/0/2 unit 0 rewrite-rules dscp voip-dscp-rewrite
+set class-of-service rewrite-rules dscp voip-dscp-rewrite import default
+set class-of-service rewrite-rules dscp voip-dscp-rewrite forwarding-class best-effort loss-priority high code-point 000001
+set class-of-service scheduler-maps voip-case forwarding-class best-effort scheduler be-scheduler
+set class-of-service scheduler-maps voip-case forwarding-class expedited-forwarding scheduler ef-scheduler
+set class-of-service scheduler-maps voip-case forwarding-class network-control scheduler nc-scheduler
+set class-of-service schedulers be-scheduler transmit-rate 1m
+set class-of-service schedulers be-scheduler transmit-rate exact
+set class-of-service schedulers be-scheduler priority low
+set class-of-service schedulers be-scheduler drop-profile-map loss-priority low protocol any drop-profile low-red
+set class-of-service schedulers be-scheduler drop-profile-map loss-priority high protocol any drop-profile high-red
+set class-of-service schedulers ef-scheduler transmit-rate 20m
+set class-of-service schedulers ef-scheduler buffer-size temporal 200k
+set class-of-service schedulers ef-scheduler priority high
+set class-of-service schedulers nc-scheduler transmit-rate percent 5
+set class-of-service schedulers nc-scheduler priority low
+set routing-options router-id 192.168.1.3
+set protocols ospf area 0.0.0.0 interface lo0.0
+set protocols ospf area 0.0.0.0 interface ge-0/0/1.0
+set protocols ospf area 0.0.0.0 interface ge-0/0/2.0
